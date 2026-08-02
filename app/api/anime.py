@@ -9,12 +9,14 @@ router = APIRouter(prefix="/api/anime", tags=["Anime"])
 @router.get("/ongoings")
 async def get_ongoings(limit: int = Query(200, le=500)):
     """Список текущих онгоингов (для верхнего блока главной страницы)"""
+    await catalog_manager.ensure_ready()
     return catalog_manager.get_ongoings(limit=limit)
 
 
 @router.get("/updates")
 async def get_updates(page: int = Query(1, ge=1), limit: int = Query(12, le=50)):
     """Завершённые тайтлы и анонсы (для нижнего блока главной страницы)"""
+    await catalog_manager.ensure_ready()
     return catalog_manager.get_catalog_page(page=page, limit=limit, statuses=["released", "anons"])
 
 
@@ -26,6 +28,7 @@ async def search_anime(q: str = Query(""), type: Optional[str] = Query(None)):
     """
     if not q.strip():
         return []
+    await catalog_manager.ensure_ready()
     status_filter = type if type in ("ongoing", "released", "anons") else None
     return catalog_manager.search(q, status_filter=status_filter)
 
