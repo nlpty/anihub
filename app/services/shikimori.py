@@ -70,6 +70,8 @@ def _to_unified(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 class ShikimoriProvider:
     def __init__(self):
         self._client: Optional[httpx.AsyncClient] = None
+        self.last_error: Optional[str] = None
+        self.last_ok: bool = False
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -82,9 +84,13 @@ class ShikimoriProvider:
             resp = await client.get(path, params=params)
             resp.raise_for_status()
             data = resp.json()
+            self.last_ok = True
+            self.last_error = None
             return data if isinstance(data, list) else []
         except Exception as e:
-            print(f"[Shikimori Error] {path} {params}: {e}")
+            self.last_ok = False
+            self.last_error = f"{type(e).__name__}: {e}"
+            print(f"[Shikimori Error] {path} {params}: {self.last_error}")
             return []
 
     async def fetch_status(

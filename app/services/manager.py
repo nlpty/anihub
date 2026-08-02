@@ -2,21 +2,27 @@
 Менеджер каталога: держит в памяти (без базы данных) объединённый список
 аниме из Shikimori (основной каталог) и AniLibria (доп. онгоинги + плееры),
 с дедупликацией по названию, и обновляет его в фоне по расписанию.
+
+Важно: каталог догружается "лениво" — если первый запрос пришёл раньше,
+чем фон успел всё скачать, ensure_ready() сам дождётся первой загрузки,
+вместо того чтобы молча вернуть пустой список.
 """
 import asyncio
 import time
+import traceback
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 from app.services.shikimori import shikimori_provider
 from app.services.anilibria import anilibria_provider
 
-# Сколько страниц (по 50 тайтлов) тянуть с Shikimori по каждому статусу.
-# Подобрано так, чтобы уложиться в память и время старта бесплатного Render-инстанса.
 PAGES_ONGOING = 6      # ~300 онгоингов
 PAGES_ANONS = 4        # ~200 анонсов
-PAGES_RELEASED = 40    # ~2000 завершённых тайтлов
+PAGES_RELEASED_QUICK = 4     # для быстрой первой загрузки
+PAGES_RELEASED_FULL = 40     # ~2000 завершённых тайтлов при полной догрузке
 
 REFRESH_INTERVAL_SECONDS = 6 * 60 * 60  # обновлять каталог раз в 6 часов
+FIRST_LOAD_TIMEOUT_SECONDS = 25         # сколько ждать первую загрузку "на лету"
 
 
 def _norm_title(title: str) -> str:
@@ -28,8 +34,10 @@ class AnimeCatalogManager:
         self._catalog: List[Dict[str, Any]] = []
         self._by_id: Dict[str, Dict[str, Any]] = {}
         self._last_refresh: float = 0
+        self._last_error: Optional[str] = None
         self._refreshing = False
-        self._lock = asyncio.Lock()
+        self._ever_loaded = asyncio.Event()
+        self._refresh_lock = asyncio.Lock()
 
     # ------------------------------------------------------------------ #
     # Обновление каталога
@@ -37,36 +45,49 @@ class AnimeCatalogManager:
     async def refresh(self, full: bool = True):
         if self._refreshing:
             return
-        self._refreshing = True
-        try:
-            print("[Catalog] Обновление каталога...")
-            ongoing, anons, released = await asyncio.gather(
-                shikimori_provider.fetch_status("ongoing", PAGES_ONGOING, order="ranked"),
-                shikimori_provider.fetch_status("anons", PAGES_ANONS, order="id"),
-                shikimori_provider.fetch_status("released", PAGES_RELEASED if full else 4, order="popularity"),
-            )
-            anilibria_extra = await anilibria_provider.get_updates(limit=50)
+        async with self._refresh_lock:
+            self._refreshing = True
+            try:
+                print("[Catalog] Обновление каталога...")
+                released_pages = PAGES_RELEASED_FULL if full else PAGES_RELEASED_QUICK
+                ongoing, anons, released = await asyncio.gather(
+                    shikimori_provider.fetch_status("ongoing", PAGES_ONGOING, order="ranked"),
+                    shikimori_provider.fetch_status("anons", PAGES_ANONS, order="id"),
+                    shikimori_provider.fetch_status("released", released_pages, order="popularity"),
+                )
+                anilibria_extra = await anilibria_provider.get_updates(limit=50)
 
-            combined = ongoing + anons + released
-            seen_titles = {_norm_title(a["title"]) for a in combined}
+                combined = ongoing + anons + released
+                seen_titles = {_norm_title(a["title"]) for a in combined}
 
-            for extra in anilibria_extra:
-                if _norm_title(extra["title"]) not in seen_titles:
-                    combined.append(extra)
-                    seen_titles.add(_norm_title(extra["title"]))
+                for extra in anilibria_extra:
+                    if _norm_title(extra["title"]) not in seen_titles:
+                        combined.append(extra)
+                        seen_titles.add(_norm_title(extra["title"]))
 
-            async with self._lock:
-                self._catalog = combined
-                self._by_id = {a["id"]: a for a in combined}
-                self._last_refresh = time.time()
-
-            print(f"[Catalog] Готово: {len(combined)} тайтлов "
-                  f"(онгоинги: {len(ongoing)}, анонсы: {len(anons)}, завершённые: {len(released)}, "
-                  f"доп. из AniLibria: {len(combined) - len(ongoing) - len(anons) - len(released)})")
-        except Exception as e:
-            print(f"[Catalog Error] {e}")
-        finally:
-            self._refreshing = False
+                if combined:
+                    self._catalog = combined
+                    self._by_id = {a["id"]: a for a in combined}
+                    self._last_refresh = time.time()
+                    self._last_error = None
+                    self._ever_loaded.set()
+                    print(f"[Catalog] Готово: {len(combined)} тайтлов "
+                          f"(онгоинги: {len(ongoing)}, анонсы: {len(anons)}, "
+                          f"завершённые: {len(released)}, "
+                          f"AniLibria доп.: {len(combined) - len(ongoing) - len(anons) - len(released)})")
+                else:
+                    # Ничего не пришло ни с одного источника — фиксируем ошибку,
+                    # чтобы её можно было увидеть через /api/health
+                    self._last_error = (
+                        f"Shikimori: {shikimori_provider.last_error or 'нет данных (пустой ответ)'} | "
+                        f"AniLibria: {anilibria_provider.last_error or 'нет данных (пустой ответ)'}"
+                    )
+                    print(f"[Catalog Error] Каталог пуст: {self._last_error}")
+            except Exception as e:
+                self._last_error = f"{type(e).__name__}: {e}"
+                print(f"[Catalog Error] {self._last_error}\n{traceback.format_exc()}")
+            finally:
+                self._refreshing = False
 
     async def start_background_refresh(self):
         """Первичная загрузка + периодическое обновление в фоне"""
@@ -78,6 +99,39 @@ class AnimeCatalogManager:
         while True:
             await asyncio.sleep(REFRESH_INTERVAL_SECONDS)
             await self.refresh(full=True)
+
+    async def ensure_ready(self):
+        """
+        Вызывается перед отдачей данных: если каталог ещё ни разу не собрался
+        (например, запрос пришёл раньше фоновой загрузки после "просыпания"
+        бесплатного Render-инстанса), ждём и/или запускаем загрузку сами.
+        """
+        if self._ever_loaded.is_set():
+            return
+        if not self._refreshing:
+            asyncio.create_task(self.refresh(full=False))
+        try:
+            await asyncio.wait_for(self._ever_loaded.wait(), timeout=FIRST_LOAD_TIMEOUT_SECONDS)
+        except asyncio.TimeoutError:
+            pass  # отдадим что есть (возможно, пусто) — статус будет виден в /api/health
+
+    # ------------------------------------------------------------------ #
+    # Диагностика
+    # ------------------------------------------------------------------ #
+    def get_status(self) -> Dict[str, Any]:
+        return {
+            "catalog_ready": self._ever_loaded.is_set(),
+            "refreshing": self._refreshing,
+            "total_titles": len(self._catalog),
+            "last_refresh": (
+                datetime.fromtimestamp(self._last_refresh).isoformat() if self._last_refresh else None
+            ),
+            "last_error": self._last_error,
+            "shikimori_last_ok": shikimori_provider.last_ok,
+            "shikimori_last_error": shikimori_provider.last_error,
+            "anilibria_last_ok": anilibria_provider.last_ok,
+            "anilibria_last_error": anilibria_provider.last_error,
+        }
 
     # ------------------------------------------------------------------ #
     # Чтение каталога
@@ -118,7 +172,6 @@ class AnimeCatalogManager:
         return self._by_id.get(anime_id)
 
     async def get_by_id_live(self, anime_id: str) -> Optional[Dict[str, Any]]:
-        """Если тайтла нет в кэше (например, только что вышел) — пробуем найти напрямую"""
         cached = self.get_by_id(anime_id)
         if cached:
             return cached
@@ -132,13 +185,11 @@ class AnimeCatalogManager:
     # Плеер
     # ------------------------------------------------------------------ #
     async def get_players(self, anime_id: str, episode: int = 1) -> List[Dict[str, Any]]:
-        # Тайтл уже пришёл из AniLibria — плеер получаем напрямую по его коду
         if anime_id.startswith("ani-"):
             anime = self.get_by_id(anime_id) or await anilibria_provider.get_by_id(anime_id.replace("ani-", ""))
             code = (anime or {}).get("code", "")
             return await anilibria_provider.get_players(code, episode)
 
-        # Тайтл из Shikimori — ищем совпадение по названию в AniLibria
         anime = await self.get_by_id_live(anime_id)
         if not anime:
             return []
