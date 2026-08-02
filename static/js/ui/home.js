@@ -138,6 +138,7 @@ export async function renderHomeOngoings(searchQuery = '') {
 
   // Загружаем Онгоинги (отображаем до 6 элементов)
   if (ongoingGrid) {
+    ongoingGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #a0aec0;">Загрузка...</p>`;
     try {
       const res = await fetch('/api/anime/ongoings');
       const rawData = await res.json();
