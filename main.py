@@ -36,7 +36,12 @@ app.include_router(anime_router)
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "catalog_ready": catalog_manager.is_ready()}
+    """
+    Диагностика. Открой этот адрес прямо в браузере (например
+    https://твой-сайт.onrender.com/api/health), чтобы увидеть, загрузился
+    ли каталог и что именно пошло не так, если нет.
+    """
+    return catalog_manager.get_status()
 
 
 @app.get("/api/titles/count")
