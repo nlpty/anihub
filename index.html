@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Аниме хаб</title>
+
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    /* Акцентный темно-синий цвет для списка «Необязательное» (#2563eb) */
+    .color-optional { color: #2563eb !important; }
+    
+    /* Принудительная темно-синяя подсветка активной кнопки «Необязательное» */
+    .list-btn.btn-optional-active,
+    .list-btn.active#btn-optional {
+      border-color: #2563eb !important;
+      background-color: rgba(37, 99, 235, 0.25) !important;
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.6) !important;
+      color: #2563eb !important;
+    }
+
+    /* Блок и кнопки счетчика серий под плеером */
+    .ep-controls-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 12px;
+      width: 100%;
+    }
+
+    /* Красная кнопка «Сброс» и Зеленая «Завершить» по краям */
+    .ep-btn-reset,
+    .ep-btn-finish {
+      min-width: 85px;
+      height: 38px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .ep-btn-reset {
+      background: rgba(245, 101, 101, 0.15);
+      border: 1px solid #f56565;
+      color: #f56565;
+    }
+
+    .ep-btn-reset:active {
+      transform: scale(0.95);
+      background: rgba(245, 101, 101, 0.3);
+    }
+
+    .ep-btn-finish {
+      background: rgba(80, 250, 123, 0.15);
+      border: 1px solid #50fa7b;
+      color: #50fa7b;
+    }
+
+    .ep-btn-finish:active {
+      transform: scale(0.95);
+      background: rgba(80, 250, 123, 0.3);
+    }
+
+    /* Кнопки Плюс и Минус (растягиваются по горизонтали) */
+    .ep-btn-step {
+      background: #2d3748;
+      border: 1px solid #4a5568;
+      color: #e2e8f0;
+      height: 38px;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex: 1; /* Растягиваются на всё доступное пространство */
+    }
+
+    .ep-btn-step:active {
+      transform: scale(0.95);
+      background: #4a5568;
+    }
+
+    .ep-counter-text {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: #66fcf1;
+      padding: 0 8px;
+      min-width: 50px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="content-container">
+    
+    <!-- 🏠 Вкладка 1: Главная -->
+    <section id="tab-home" class="tab-content active">
+      <div class="search-input-wrapper">
+        <input 
+          type="text" 
+          id="homeSearchInput" 
+          class="search-input" 
+          placeholder="Поиск по всем аниме..." 
+          oninput="handleHomeSearch(this.value)"
+        >
+        <button 
+          type="button" 
+          id="homeSearchClear" 
+          class="search-clear-btn" 
+          onclick="clearSearchInput('homeSearchInput')"
+        >✕</button>
+      </div>
+
+      <div id="homeSearchResults" class="grid-3" style="display: none; margin-bottom: 1.5rem;"></div>
+
+      <div id="mainHomeContent">
+        <div class="section-title">
+          <h2>Онгоинги</h2>
+        </div>
+        <div id="ongoing-list" class="grid-3"></div>
+        <button onclick="openOngoingsPage()" class="btn-full-width" style="margin-top: 10px;">Показать все онгоинги</button>
+
+        <div class="section-title" style="margin-top: 1.5rem;">
+          <h2>Обновления и Анонсы</h2>
+        </div>
+        <div id="updates-list" class="grid-3"></div>
+        <button id="loadMoreBtn" class="btn-full-width" onclick="loadMoreHomeUpdates()" style="margin-top: 10px;">Показать еще</button>
+      </div>
+    </section>
+
+    <!-- ⚡️ СТРАНИЦА ОНГОИНГОВ -->
+    <section id="tab-ongoings" class="tab-content">
+      <div class="subpage-header">
+        <button class="btn-back-nav" onclick="closeOngoingsPage()">← Назад</button>
+        <div class="subpage-title" style="color: #bd93f9;">📡 Онгоинги</div>
+      </div>
+
+      <div class="search-input-wrapper">
+        <input 
+          type="text" 
+          id="ongoingsSearchInput" 
+          class="search-input" 
+          placeholder="Поиск по онгоингам..." 
+          oninput="handleOngoingsSearch(this.value)"
+        >
+        <button 
+          type="button" 
+          id="ongoingsSearchClear" 
+          class="search-clear-btn" 
+          onclick="clearSearchInput('ongoingsSearchInput')"
+        >✕</button>
+      </div>
+
+      <div id="allOngoingsGrid" class="grid-3"></div>
+      <button id="loadMoreOngoingsBtn" class="btn-full-width" onclick="loadMoreOngoings()" style="display: none; margin-top: 10px;">Показать еще</button>
+    </section>
+
+    <!-- 🧩 Вкладка 2: Подборка -->
+    <section id="tab-selection" class="tab-content">
+      <div class="card-big">
+        <h3>💡 Рекомендация на основе Избранного</h3>
+        <div id="recCard" style="margin-top: 8px;">Загрузка...</div>
+      </div>
+      
+      <div class="card-big" style="margin-top: 1rem;">
+        <h3>🎲 Случайное аниме</h3>
+        <div id="randomCard" style="margin-top: 8px;">Загрузка...</div>
+      </div>
+
+      <!-- Счетчик всех тайтлов на сайте -->
+      <div class="card-big" style="margin-top: 1rem;">
+        <div style="font-size: 0.95rem; color: #a0aec0; display: flex; justify-content: space-between; align-items: center;">
+          <span>Всего тайтлов на сайте:</span>
+          <b id="siteTotalTitles" style="color: #66fcf1; font-size: 1.1rem;">0</b>
+        </div>
+      </div>
+    </section>
+
+    <!-- 📁 Вкладка 3: Коллекции -->
+    <section id="tab-collections" class="tab-content">
+      <div class="search-input-wrapper">
+        <input 
+          type="text" 
+          id="collectionsSearchInput" 
+          class="search-input" 
+          placeholder="Поиск по спискам..." 
+          oninput="handleCollectionsSearch(this.value)"
+        >
+        <button 
+          type="button" 
+          id="collectionsSearchClear" 
+          class="search-clear-btn" 
+          onclick="clearSearchInput('collectionsSearchInput')"
+        >✕</button>
+      </div>
+
+      <div id="collectionsSearchCount" style="display: none; margin: 10px 0; font-weight: 600; color: #a0aec0; font-size: 0.95rem;"></div>
+      <div id="collectionsSearchResults" class="grid-3" style="display: none; margin-bottom: 1.5rem;"></div>
+
+      <div id="mainCollectionsContent">
+        <div class="collections-list">
+          <div class="collection-item item-watch" onclick="openList('watch', '🍿 Посмотреть')">
+            <span style="color: #f687b3;">🍿 Посмотреть</span>
+            <b id="count-watch">0</b>
+          </div>
+          <div class="collection-item item-completed" onclick="openList('completed', '✅ Завершено')">
+            <span style="color: #48bb78;">✅ Завершено</span>
+            <b id="count-completed">0</b>
+          </div>
+          <div class="collection-item item-favorite" onclick="openList('favorite', '💜 Избранное')">
+            <span style="color: #b794f4;">💜 Избранное</span>
+            <b id="count-favorite">0</b>
+          </div>
+          <div class="collection-item item-unreleased" onclick="openList('unreleased', '⏳ Выходит')">
+            <span style="color: #63b3ed;">⏳ Выходит</span>
+            <b id="count-unreleased">0</b>
+          </div>
+          <div class="collection-item item-optional" onclick="openList('optional', '🧿 Необязательное')">
+            <span class="color-optional" style="font-weight: 600;">🧿 Необязательное</span>
+            <b id="count-optional" class="color-optional">0</b>
+          </div>
+          <div class="collection-item item-dropped" onclick="openList('dropped', '🗑️ Брошено')">
+            <span style="color: #f56565;">🗑️ Брошено</span>
+            <b id="count-dropped">0</b>
+          </div>
+        </div>
+
+        <div class="last-watched-box" style="margin-top: 1rem;">
+          <h4>Последнее просмотренное</h4>
+          <div id="lastWatchedInfo" style="margin-top: 6px; font-size: 0.9rem; color: #a0aec0;">Нет просмотренных серий</div>
+        </div>
+
+        <div id="jsonActionsBox" style="margin-top: 1rem; display: flex; flex-direction: row; gap: 10px;">
+          <button id="exportJsonBtn" onclick="exportUserDataJSON()" class="btn-full-width" style="flex: 1; margin: 0; background: rgba(37, 99, 235, 0.15); border: 1px solid #2563eb; color: #60a5fa;">Экспорт JSON</button>
+          <label id="importJsonBtn" class="btn-full-width" style="flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; text-align: center;">
+            Импорт JSON
+            <input type="file" accept=".json" onchange="importUserDataJSON(event)" style="display: none;">
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- 📄 Страница отдельного списка -->
+    <section id="tab-single-list" class="tab-content">
+      <div class="list-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-top: 8px;">
+        <button class="btn-back-nav" onclick="closeList()">← Назад</button>
+        <h2 id="currentListTitle" style="font-size: 1.1rem; color: #fff;">Название списка</h2>
+      </div>
+
+      <div class="search-input-wrapper">
+        <input 
+          type="text" 
+          id="singleListSearchInput" 
+          class="search-input" 
+          placeholder="Поиск по списку..." 
+          oninput="handleSingleListSearch(this.value)"
+        >
+        <button 
+          type="button" 
+          id="singleListSearchClear" 
+          class="search-clear-btn" 
+          onclick="clearSearchInput('singleListSearchInput')"
+        >✕</button>
+      </div>
+
+      <div id="singleListGrid" class="grid-3"></div>
+    </section>
+
+    <!-- 🎬 Страница детального просмотра аниме -->
+    <section id="anime-details-page" class="tab-content">
+      <!-- Главный контент карточки -->
+      <div id="detailMainCardContent">
+        <div class="details-window poster-window" id="posterWindow">
+          <div class="status-indicator left-bar" id="statusBarLeft"></div>
+          <div class="status-indicator right-bar" id="statusBarRight"></div>
+          
+          <div class="poster-container-inner">
+            <div id="detailEpBadge" class="ep-badge detail-badge" style="display: none;"></div>
+            <img id="detailPoster" src="" alt="Poster" class="detail-poster-img">
+          </div>
+
+          <div class="list-selector-bar" style="margin-top: 12px;">
+            <button class="list-btn" id="btn-watch" onclick="setAnimeStatus('watch')" title="Посмотреть">🍿</button>
+            <button class="list-btn" id="btn-completed" onclick="setAnimeStatus('completed')" title="Завершено">✅</button>
+            <button class="list-btn" id="btn-favorite" onclick="setAnimeStatus('favorite')" title="Избранное">💜</button>
+            <button class="list-btn" id="btn-unreleased" onclick="setAnimeStatus('unreleased')" title="Выходит">⏳</button>
+            <button class="list-btn color-optional" id="btn-optional" onclick="setAnimeStatus('optional')" title="Необязательное">🧿</button>
+            <button class="list-btn" id="btn-dropped" onclick="setAnimeStatus('dropped')" title="Брошено">🗑️</button>
+          </div>
+        </div>
+
+        <!-- Название и альт. названия -->
+        <div class="details-window">
+          <h1 id="detailTitleRu" class="title-ru">???</h1>
+          <button class="btn-expand-center" onclick="toggleExpand('titleAltBox', this)">
+            <span class="arrow">▼</span>
+          </button>
+          <div id="titleAltBox" class="expandable-content hidden">
+            <p><b>Eng:</b> <span id="detailTitleEn">???</span></p>
+            <p><b>Jap:</b> <span id="detailTitleJap">???</span></p>
+          </div>
+        </div>
+
+        <!-- Описание -->
+        <div class="details-window">
+          <h3 style="color: #fff; margin-bottom: 8px;">Описание</h3>
+          <div id="detailDescription" class="description-text">
+            Описание отсутствует.
+          </div>
+        </div>
+
+        <!-- Инфо-блок -->
+        <div class="details-window meta-window">
+          <div class="meta-row">
+            <span class="meta-label">Возраст:</span>
+            <span class="meta-value" id="detailAgeRating" style="font-weight: 600; color: #ff79c6;">—</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Рейтинг:</span>
+            <span class="meta-value rating-badge">★ <span id="detailRating">???</span></span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Год / Дата выхода:</span>
+            <span class="meta-value" id="detailReleaseDate">???</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Жанры:</span>
+            <span class="meta-value tags-container" id="detailGenres"></span>
+          </div>
+        </div>
+
+        <!-- Порядок выхода -->
+        <div class="details-window">
+          <button class="btn-expand-header" onclick="toggleExpand('chronologyBox', this)">
+            <span>Порядок выхода</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div id="chronologyBox" class="expandable-content hidden" style="margin-top: 12px;">
+            <div class="chronology-list" id="chronologyList"></div>
+          </div>
+        </div>
+
+        <!-- ЕДИНЫЙ БЛОК: Плеер + Прогресс просмотра -->
+        <div class="details-window" id="onlinePlayerWindow">
+          <h3>Смотреть онлайн</h3>
+          <div class="player-controls">
+            <div class="select-group">
+              <label>Озвучка:</label>
+              <select id="voiceSelect" onchange="changeVoiceover(this.value)">
+                <option value="anilibria">AniLibria</option>
+                <option value="studioband">Studio Band</option>
+              </select>
+            </div>
+            <div class="select-group">
+              <label>Плеер:</label>
+              <select id="playerSelect" onchange="changePlayer(this.value)">
+                <option value="main">Основной</option>
+                <option value="backup">Резервный</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Окно воспроизведения -->
+          <div class="player-container">
+            <iframe id="videoPlayer" src="" frameborder="0" allowfullscreen></iframe>
+          </div>
+
+          <!-- Счетчик серий интегрирован прямо в контейнер плеера -->
+          <div id="detailEpControls" class="ep-controls-container"></div>
+        </div>
+
+        <!-- Похожие -->
+        <div class="details-window">
+          <h3>Похожие тайтлы</h3>
+          <div class="grid-3" id="similarGrid" style="margin-top: 10px;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Нижняя навигация (3 кнопки: Главная, Подборка, Коллекции) -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="switchTab('home', this)">🏠</button>
+    <button class="nav-btn" onclick="switchTab('selection', this)">🧩</button>
+    <button class="nav-btn" onclick="switchTab('collections', this)">📁</button>
+  </nav>
+
+  <script type="module" src="/static/js/main.js"></script>
+
+</body>
+</html>
