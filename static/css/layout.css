@@ -1,0 +1,120 @@
+/* ==========================================================================
+   КАРКАС, СЕТКИ И НАВИГАЦИЯ
+   ========================================================================== */
+.content-container {
+  padding: 12px;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.tab-content {
+  display: none;
+  width: 100%;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Шапки субстраниц */
+.subpage-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1f2833;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #2d3748;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.btn-back-nav {
+  background: #2b3a4a;
+  color: #66fcf1;
+  border: 1px solid #45a29e;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.btn-back-nav:active {
+  background: #1f2833;
+}
+
+.subpage-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff;
+}
+
+.section-title {
+  margin-bottom: 8px;
+}
+
+.section-title h2 {
+  font-size: 1.1rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Сетки */
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* Нижняя навигация */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 65px;
+  background: #1f2833;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid #2d3748;
+  z-index: 9999;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  font-size: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  padding: 8px 16px;
+  border-radius: 12px;
+}
+
+.nav-btn:hover {
+  color: #fff;
+}
+
+.nav-btn.active {
+  color: #66fcf1;
+  background: rgba(102, 252, 241, 0.12);
+  transform: translateY(-2px);
+  font-weight: 600;
+}

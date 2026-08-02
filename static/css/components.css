@@ -1,0 +1,237 @@
+/* ==========================================================================
+   КОМПОНЕНТЫ: КНОПКИ, ПОИСК, КАРТОЧКИ И СПИСКИ
+   ========================================================================== */
+.btn-full-width {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #1f2833;
+  color: #66fcf1;
+  border: 1px solid #45a29e;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  transition: background-color 0.2s;
+}
+
+.btn-full-width:active {
+  background: #2b3a4a;
+}
+
+/* Поиск */
+.search-container {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  padding: 12px 38px 12px 14px;
+  background: #1f2833;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.search-input-wrapper input:focus {
+  border-color: #66fcf1;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  display: none;
+  z-index: 5;
+  user-select: none;
+}
+
+.search-clear-btn:hover {
+  color: #ffffff;
+}
+
+/* Карточка аниме */
+.anime-card {
+  position: relative;
+  background: #1f2833;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #2d3748;
+  cursor: pointer;
+  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.anime-card:active {
+  transform: scale(0.97);
+}
+
+.card-poster-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  background: #0d1117;
+}
+
+.card-poster-container img, 
+.anime-card img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.card-list-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 25%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 12, 16, 0.35);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.card-list-emoji {
+  font-size: 1.1rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.9));
+}
+
+.anime-card p {
+  font-size: 0.75rem;
+  padding: 6px 4px;
+  color: #fff;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.6em;
+  margin: 0;
+}
+
+.ep-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(11, 12, 16, 0.85);
+  color: #66fcf1;
+  border: 1px solid #45a29e;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 4px;
+  z-index: 4;
+}
+
+/* Коллекции и Списки */
+.collections-list {
+  background: #1f2833;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #2d3748;
+}
+
+.collection-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #2d3748;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.collection-item:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.collection-item:last-child { border-bottom: none; }
+.collection-item.item-watch { color: #f687b3; }
+.collection-item.item-completed { color: #48bb78; }
+.collection-item.item-favorite { color: #b794f4; }
+.collection-item.item-unreleased { color: #63b3ed; }
+.collection-item.item-optional { color: #2563eb; }
+.collection-item.item-dropped { color: #f56565; }
+
+.card-big, .last-watched-box {
+  background: #1f2833;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #2d3748;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+/* Аккордеоны */
+.btn-expand-center {
+  background: #0b0c10;
+  color: #66fcf1;
+  border: 1px solid #2d3748;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-expand-header {
+  background: #1a202c;
+  border: 1px solid #2d3748;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  width: 100%;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+.expandable-content {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #a0aec0;
+}
+
+.expandable-content.hidden { 
+  display: none; 
+}
