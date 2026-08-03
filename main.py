@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 
 from app.api.anime import router as anime_router
 from app.services.manager import catalog_manager
+from app.http import UTF8JSONResponse
 
 
 @asynccontextmanager
@@ -18,7 +19,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Anime Hub API", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="Anime Hub API", version="2.0.0", lifespan=lifespan, default_response_class=UTF8JSONResponse)
 
 app.add_middleware(
     CORSMiddleware,
