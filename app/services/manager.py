@@ -22,7 +22,9 @@ PAGES_RELEASED_QUICK = 4     # для быстрой первой загрузк
 PAGES_RELEASED_FULL = 40     # ~2000 завершённых тайтлов при полной догрузке
 
 REFRESH_INTERVAL_SECONDS = 6 * 60 * 60  # обновлять каталог раз в 6 часов
-FIRST_LOAD_TIMEOUT_SECONDS = 25         # сколько ждать первую загрузку "на лету"
+FIRST_LOAD_TIMEOUT_SECONDS = 8           # сколько МАКСИМУМ ждать ответа, если каталог ещё грузится
+RETRY_MIN_DELAY = 5                      # старт бэкоффа при неудачной загрузке (сек)
+RETRY_MAX_DELAY = 120                    # потолок бэкоффа (сек)
 
 
 def _norm_title(title: str) -> str:
@@ -90,30 +92,44 @@ class AnimeCatalogManager:
                 self._refreshing = False
 
     async def start_background_refresh(self):
-        """Первичная загрузка + периодическое обновление в фоне"""
-        await self.refresh(full=False)   # быстрый старт: небольшой каталог сразу
-        asyncio.create_task(self._grow_then_loop())
+        """
+        Первичная загрузка с автоповтором (нарастающая пауза при неудаче,
+        например если Shikimori временно ответил 429), затем докачка полного
+        каталога и обычный цикл обновления раз в REFRESH_INTERVAL_SECONDS.
+        Это единственное место, которое инициирует загрузку каталога — запросы
+        от фронтенда (ensure_ready) сами больше ничего не запускают, чтобы не
+        плодить параллельные попытки и не долбить Shikimori ещё сильнее при сбое.
+        """
+        asyncio.create_task(self._retry_until_loaded())
 
-    async def _grow_then_loop(self):
-        await self.refresh(full=True)    # затем докачиваем полный каталог
+    async def _retry_until_loaded(self):
+        delay = RETRY_MIN_DELAY
+        while not self._ever_loaded.is_set():
+            await self.refresh(full=False)
+            if self._ever_loaded.is_set():
+                break
+            print(f"[Catalog] Не удалось загрузить каталог, повтор через {delay}с")
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, RETRY_MAX_DELAY)
+
+        await self.refresh(full=True)  # докачиваем полный каталог
         while True:
             await asyncio.sleep(REFRESH_INTERVAL_SECONDS)
             await self.refresh(full=True)
 
     async def ensure_ready(self):
         """
-        Вызывается перед отдачей данных: если каталог ещё ни разу не собрался
-        (например, запрос пришёл раньше фоновой загрузки после "просыпания"
-        бесплатного Render-инстанса), ждём и/или запускаем загрузку сами.
+        Вызывается перед отдачей данных. Если каталог ещё не собран — просто
+        коротко ждём (фоновый цикл в _retry_until_loaded уже сам этим занят)
+        и отдаём что есть, вместо того чтобы держать HTTP-запрос десятки секунд
+        или запускать ещё одну параллельную загрузку.
         """
         if self._ever_loaded.is_set():
             return
-        if not self._refreshing:
-            asyncio.create_task(self.refresh(full=False))
         try:
             await asyncio.wait_for(self._ever_loaded.wait(), timeout=FIRST_LOAD_TIMEOUT_SECONDS)
         except asyncio.TimeoutError:
-            pass  # отдадим что есть (возможно, пусто) — статус будет виден в /api/health
+            pass
 
     # ------------------------------------------------------------------ #
     # Диагностика
