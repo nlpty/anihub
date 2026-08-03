@@ -38,6 +38,27 @@ async def list_providers():
     return {"providers": ["shikimori", "anilibria"], "total": 2}
 
 
+@router.get("/random/pick")
+async def get_random_anime():
+    """Случайный тайтл из каталога — для вкладки 'Подборка'"""
+    await catalog_manager.ensure_ready()
+    return catalog_manager.get_random() or {}
+
+
+@router.get("/recommendations/by-genres")
+async def get_recommendations(
+    genres: str = Query(""), exclude: str = Query(""), limit: int = Query(1, le=10)
+):
+    """
+    Рекомендация по жанрам избранных тайтлов пользователя.
+    genres — через запятую, exclude — id тайтлов, которые не нужно предлагать (уже в списках).
+    """
+    await catalog_manager.ensure_ready()
+    genre_list = [g for g in genres.split(",") if g.strip()]
+    exclude_list = [e for e in exclude.split(",") if e.strip()]
+    return catalog_manager.get_recommendations(genre_list, exclude_list, limit=limit)
+
+
 @router.get("/{anime_id}")
 async def get_anime_by_id(anime_id: str):
     """Подробная информация о тайтле"""
