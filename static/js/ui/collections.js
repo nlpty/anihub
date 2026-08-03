@@ -97,7 +97,7 @@ export function renderSingleListItems(listId, searchQuery = '') {
   const database = getDatabase();
   
   let items = database.filter(anime => 
-    animeIds.some(id => Number(id) === Number(anime.id))
+    animeIds.some(id => String(id) === String(anime.id))
   );
 
   const query = searchQuery.trim().toLowerCase();
@@ -168,7 +168,7 @@ export function handleCollectionsSearch(val) {
 
   const database = getDatabase();
   let matchedItems = database.filter(i => 
-    allSavedIds.some(id => Number(id) === Number(i.id)) && (
+    allSavedIds.some(id => String(id) === String(i.id)) && (
       (i.title && i.title.toLowerCase().includes(query)) ||
       (i.titleEn && i.titleEn.toLowerCase().includes(query)) ||
       (i.titleJap && i.titleJap.toLowerCase().includes(query))
@@ -209,7 +209,6 @@ export function updateCollectionsCounters() {
     }
   });
 
-  updateTotalSiteTitlesCounter();
   updateLastWatchedUI();
 }
 
@@ -233,25 +232,6 @@ export function updateLastWatchedUI() {
     `;
   } else {
     infoEl.innerText = "История просмотра пуста";
-  }
-}
-
-/**
- * Обновляет счетчик всех аниме на сайте
- */
-export function updateTotalSiteTitlesCounter() {
-  const counterEls = document.querySelectorAll('#siteTotalTitles, #site-total-titles-count, .site-total-titles-count');
-  if (!counterEls || counterEls.length === 0) return;
-
-  const database = getDatabase();
-  if (Array.isArray(database)) {
-    const validTitles = database.filter(item => {
-      const rating = item.rating ? String(item.rating).toLowerCase() : '';
-      return rating !== 'rx';
-    });
-    counterEls.forEach(el => {
-      el.innerText = validTitles.length;
-    });
   }
 }
 

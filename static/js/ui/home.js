@@ -10,7 +10,7 @@ let currentUpdatesPage = 1;
 
 const ONGOINGS_PER_PAGE = 20;
 const UPDATES_PER_PAGE = 12;
-const PLACEHOLDER_IMAGE = 'https://placehold.co/300x450/1a1d24/cccccc?text=Нет+постера';
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22300%22%20height%3D%22450%22%3E%3Crect%20width%3D%22300%22%20height%3D%22450%22%20fill%3D%22%231a1d24%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%238b93a3%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3E%D0%9D%D0%B5%D1%82%20%D0%BF%D0%BE%D1%81%D1%82%D0%B5%D1%80%D0%B0%3C/text%3E%3C/svg%3E';
 
 const LIST_CONFIG = {
   favorite: { emoji: '💜', color: 'rgba(189, 147, 249, 0.25)' },
@@ -144,7 +144,7 @@ export async function renderHomeOngoings(searchQuery = '') {
       const rawData = await res.json();
       const ongoings = Array.isArray(rawData) ? rawData : (rawData.items || []);
       mergeAnimeIntoDatabase(ongoings);
-      const topItems = ongoings.slice(0, 6);
+      const topItems = ongoings.slice(0, 3);
 
       if (topItems.length === 0) {
         ongoingGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #a0aec0;">Нет активных онгоингов</p>`;

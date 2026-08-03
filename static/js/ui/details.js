@@ -23,10 +23,10 @@ import { getAnimePlayers } from '../api.js';
 import { renderPlayer, destroyPlayer } from './player.js';
 
 let currentAnimeId = null;
-const PLACEHOLDER_IMAGE = 'https://placehold.co/300x450/1a1d24/cccccc?text=Нет+постера';
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22300%22%20height%3D%22450%22%3E%3Crect%20width%3D%22300%22%20height%3D%22450%22%20fill%3D%22%231a1d24%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%238b93a3%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3E%D0%9D%D0%B5%D1%82%20%D0%BF%D0%BE%D1%81%D1%82%D0%B5%D1%80%D0%B0%3C/text%3E%3C/svg%3E';
 
 export function getCurrentAnimeId() {
-  return currentAnimeId || Number(localStorage.getItem('currentAnimeId'));
+  return currentAnimeId || localStorage.getItem('currentAnimeId');
 }
 
 /**
@@ -81,7 +81,7 @@ async function loadEpisodePlayer(animeId, episode) {
 
 // 📂 ОТКРЫТИЕ КАРТОЧКИ АНИМЕ
 export function openAnimeDetails(animeId) {
-  currentAnimeId = Number(animeId);
+  currentAnimeId = String(animeId);
   localStorage.setItem('currentAnimeId', currentAnimeId);
 
   const activeTabEl = document.querySelector('.tab-content.active');
@@ -144,7 +144,7 @@ function updateStatusBars(status) {
 // 🖼 РЕНДЕР КОНТЕНТА КАРТОЧКИ
 export function renderAnimeDetailsContent(animeId) {
   if (!animeId) animeId = getCurrentAnimeId();
-  currentAnimeId = Number(animeId);
+  currentAnimeId = String(animeId);
 
   const anime = getAnimeById(currentAnimeId);
   if (!anime) return;
@@ -221,13 +221,13 @@ function renderEpisodesControlPanel(anime) {
   const total = anime.totalEp || 12;
 
   container.innerHTML = `
-    <button onclick="resetEpisodeCount(${anime.id})" class="ep-btn-reset" title="Сбросить до 0">Сброс</button>
+    <button onclick="resetEpisodeCount('${anime.id}')" class="ep-btn-reset" title="Сбросить до 0">Сброс</button>
     <button onclick="changeEpisodeCount(-1)" class="ep-btn-step">-</button>
-    <div onclick="promptEpisodeChange(${anime.id})" class="ep-counter-text" style="cursor: pointer;" title="Нажмите, чтобы ввести вручную">
+    <div onclick="promptEpisodeChange('${anime.id}')" class="ep-counter-text" style="cursor: pointer;" title="Нажмите, чтобы ввести вручную">
       ${anime.currentEp || 0}/${total}
     </div>
     <button onclick="changeEpisodeCount(1)" class="ep-btn-step">+</button>
-    <button onclick="completeAnimeCard(${anime.id})" class="ep-btn-finish">Завершить</button>
+    <button onclick="completeAnimeCard('${anime.id}')" class="ep-btn-finish">Завершить</button>
   `;
 }
 
@@ -315,12 +315,12 @@ export function moveToCompletedAutomatically(animeId) {
   
   mainStatuses.forEach(status => {
     if (userLists[status]) {
-      userLists[status] = userLists[status].filter(id => Number(id) !== Number(animeId));
+      userLists[status] = userLists[status].filter(id => String(id) !== String(animeId));
     }
   });
 
   if (!userLists.completed) userLists.completed = [];
-  if (!userLists.completed.some(id => Number(id) === Number(animeId))) {
+  if (!userLists.completed.some(id => String(id) === String(animeId))) {
     userLists.completed.push(animeId);
   }
 
@@ -339,11 +339,11 @@ export function setAnimeStatus(targetList, explicitAnimeId = null) {
   const targetId = explicitAnimeId || getCurrentAnimeId();
   if (!targetId) return;
 
-  currentAnimeId = Number(targetId);
+  currentAnimeId = String(targetId);
 
   if (targetList === 'favorite') {
     if (!userLists.favorite) userLists.favorite = [];
-    const index = userLists.favorite.findIndex(id => Number(id) === Number(targetId));
+    const index = userLists.favorite.findIndex(id => String(id) === String(targetId));
     if (index > -1) {
       userLists.favorite.splice(index, 1);
     } else {
@@ -353,11 +353,11 @@ export function setAnimeStatus(targetList, explicitAnimeId = null) {
     const mainStatuses = ['watch', 'completed', 'unreleased', 'optional', 'dropped'];
     
     if (!userLists[targetList]) userLists[targetList] = [];
-    const isAlreadyInTarget = userLists[targetList].some(id => Number(id) === Number(targetId));
+    const isAlreadyInTarget = userLists[targetList].some(id => String(id) === String(targetId));
 
     mainStatuses.forEach(status => {
       if (userLists[status]) {
-        userLists[status] = userLists[status].filter(id => Number(id) !== Number(targetId));
+        userLists[status] = userLists[status].filter(id => String(id) !== String(targetId));
       }
     });
 
@@ -395,7 +395,7 @@ export function updateListButtonsState() {
   listTypes.forEach(type => {
     const btn = document.getElementById(`btn-${type}`);
     if (btn) {
-      const isInList = userLists[type] && userLists[type].some(id => Number(id) === Number(activeId));
+      const isInList = userLists[type] && userLists[type].some(id => String(id) === String(activeId));
       if (isInList) {
         const style = listStyles[type];
         btn.classList.add('active');
