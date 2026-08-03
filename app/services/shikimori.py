@@ -7,12 +7,16 @@
 """
 import re
 import asyncio
+import time
 from typing import List, Dict, Any, Optional
 
 import httpx
 
 BASE_URL = "https://shikimori.io/api"  # домен shikimori.one теперь постоянно редиректит сюда
 HEADERS = {"User-Agent": "AnimeHub/1.0 (personal project)"}
+
+MIN_REQUEST_INTERVAL = 0.8  # сек между ЛЮБЫМИ запросами к Shikimori (их лимит ~90/мин)
+MAX_RETRIES = 3
 
 # Возрастные рейтинги Shikimori -> человекочитаемый вид
 RATING_MAP = {
@@ -73,6 +77,8 @@ class ShikimoriProvider:
         self._client: Optional[httpx.AsyncClient] = None
         self.last_error: Optional[str] = None
         self.last_ok: bool = False
+        self._rate_lock = asyncio.Lock()
+        self._last_request_at: float = 0.0
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -81,20 +87,43 @@ class ShikimoriProvider:
             )
         return self._client
 
-    async def _get(self, path: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def _throttle(self):
+        """Гарантирует минимальный интервал между ЛЮБЫМИ запросами к Shikimori,
+        даже если несколько корутин дёргают провайдер одновременно."""
+        async with self._rate_lock:
+            elapsed = time.monotonic() - self._last_request_at
+            wait = MIN_REQUEST_INTERVAL - elapsed
+            if wait > 0:
+                await asyncio.sleep(wait)
+            self._last_request_at = time.monotonic()
+
+    async def _request(self, path: str, params: Dict[str, Any]) -> Optional[Any]:
+        """Один запрос с троттлингом и повтором при 429 (с нарастающей паузой)."""
         client = await self._get_client()
-        try:
-            resp = await client.get(path, params=params)
-            resp.raise_for_status()
-            data = resp.json()
-            self.last_ok = True
-            self.last_error = None
-            return data if isinstance(data, list) else []
-        except Exception as e:
-            self.last_ok = False
-            self.last_error = f"{type(e).__name__}: {e}"
-            print(f"[Shikimori Error] {path} {params}: {self.last_error}")
-            return []
+        for attempt in range(1, MAX_RETRIES + 1):
+            await self._throttle()
+            try:
+                resp = await client.get(path, params=params)
+                if resp.status_code == 429:
+                    retry_after = float(resp.headers.get("Retry-After", 3 * attempt))
+                    self.last_error = f"429 Too Many Requests, повтор через {retry_after:.0f}с"
+                    print(f"[Shikimori] 429 на {path} {params}, жду {retry_after:.0f}с (попытка {attempt}/{MAX_RETRIES})")
+                    await asyncio.sleep(retry_after)
+                    continue
+                resp.raise_for_status()
+                self.last_ok = True
+                self.last_error = None
+                return resp.json()
+            except Exception as e:
+                self.last_ok = False
+                self.last_error = f"{type(e).__name__}: {e}"
+                print(f"[Shikimori Error] {path} {params}: {self.last_error}")
+                return None
+        return None
+
+    async def _get(self, path: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
+        data = await self._request(path, params)
+        return data if isinstance(data, list) else []
 
     async def fetch_status(
         self, status: str, pages: int, limit_per_page: int = 50, order: str = "popularity"
@@ -118,8 +147,6 @@ class ShikimoriProvider:
                 unified = _to_unified(item)
                 if unified:
                     results.append(unified)
-            # Уважаем rate-limit Shikimori (5 запросов/сек)
-            await asyncio.sleep(0.25)
         return results
 
     async def search(self, query: str, limit: int = 30) -> List[Dict[str, Any]]:
@@ -127,14 +154,8 @@ class ShikimoriProvider:
         return [u for item in raw if (u := _to_unified(item))]
 
     async def get_by_id(self, shiki_id: str) -> Optional[Dict[str, Any]]:
-        client = await self._get_client()
-        try:
-            resp = await client.get(f"/animes/{shiki_id}")
-            resp.raise_for_status()
-            return _to_unified(resp.json())
-        except Exception as e:
-            print(f"[Shikimori Error] get_by_id {shiki_id}: {e}")
-            return None
+        data = await self._request(f"/animes/{shiki_id}", {})
+        return _to_unified(data) if data else None
 
     async def close(self):
         if self._client:
