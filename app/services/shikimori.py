@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional
 
 import httpx
 
-BASE_URL = "https://shikimori.one/api"
+BASE_URL = "https://shikimori.io/api"  # домен shikimori.one теперь постоянно редиректит сюда
 HEADERS = {"User-Agent": "AnimeHub/1.0 (personal project)"}
 
 # Возрастные рейтинги Shikimori -> человекочитаемый вид
@@ -41,7 +41,7 @@ def _to_unified(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
     image = item.get("image") or {}
     poster_path = image.get("original") or image.get("preview") or ""
-    poster = f"https://shikimori.one{poster_path}" if poster_path else ""
+    poster = f"https://shikimori.io{poster_path}" if poster_path else ""
 
     genres = [g.get("russian") or g.get("name") for g in (item.get("genres") or []) if g]
     raw_rating = item.get("rating")
@@ -75,7 +75,9 @@ class ShikimoriProvider:
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(base_url=BASE_URL, headers=HEADERS, timeout=15)
+            self._client = httpx.AsyncClient(
+                base_url=BASE_URL, headers=HEADERS, timeout=15, follow_redirects=True
+            )
         return self._client
 
     async def _get(self, path: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
