@@ -1,5 +1,14 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+import mimetypes
+
+# На некоторых Linux-контейнерах (в т.ч. на Render) системная база mimetypes
+# неполная, и .js может отдаваться с неправильным Content-Type. Браузер по
+# спецификации ОТКАЗЫВАЕТСЯ выполнять <script type="module">, если тип не
+# javascript — молча, без ошибки на странице. Из-за этого сайт выглядит
+# полностью "мёртвым" (ничего не работает), хотя HTML/CSS/API в порядке.
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
