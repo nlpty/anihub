@@ -80,6 +80,36 @@ export async function getAnimePlayers(animeId, episode = 1) {
   }
 }
 
+/** Случайный тайтл из каталога */
+export async function getRandomAnime() {
+  try {
+    const response = await fetch('/api/anime/random/pick');
+    const data = await handleResponse(response);
+    return (data && data.id) ? data : null;
+  } catch (error) {
+    console.error('[API Error] Ошибка получения случайного аниме:', error);
+    return null;
+  }
+}
+
+/** Рекомендация по жанрам (genres — массив строк, excludeIds — массив id) */
+export async function getRecommendations(genres = [], excludeIds = [], limit = 1) {
+  if (!genres || genres.length === 0) return [];
+  try {
+    const params = new URLSearchParams({
+      genres: genres.join(','),
+      exclude: excludeIds.join(','),
+      limit: String(limit)
+    });
+    const response = await fetch(`/api/anime/recommendations/by-genres?${params}`);
+    const data = await handleResponse(response);
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('[API Error] Ошибка получения рекомендаций:', error);
+    return [];
+  }
+}
+
 /** Общее количество тайтлов в каталоге */
 export async function getTitlesCount() {
   try {

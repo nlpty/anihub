@@ -8,7 +8,7 @@ import {
   closeOngoingsPage, 
   handleOngoingsSearch, 
   loadMoreHomeUpdates 
-} from './ui/home.js';
+} from './ui/home.js?v=3';
 
 import { 
   openAnimeDetails, 
@@ -19,7 +19,7 @@ import {
   changeEpisodeCount, 
   promptEpisodeChange, 
   completeAnimeCard 
-} from './ui/details.js';
+} from './ui/details.js?v=3';
 
 import { 
   openList, 
@@ -29,17 +29,17 @@ import {
   updateCollectionsCounters, 
   exportUserDataJSON, 
   importUserDataJSON 
-} from './ui/collections.js';
+} from './ui/collections.js?v=3';
 
 import { 
   highlightNavButton, 
   toggleExpand, 
   changeVoiceover, 
   changePlayer 
-} from './ui/navigation.js';
+} from './ui/navigation.js?v=3';
 
-import { copyToClipboard } from './utils.js';
-import { renderSelectionTab } from './ui/selection.js';
+import { copyToClipboard } from './utils.js?v=3';
+import { renderSelectionTab } from './ui/selection.js?v=3';
 
 // --- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ---
 window.switchTab = function(tabName, el) {
