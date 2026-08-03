@@ -11,6 +11,7 @@ mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 
 from fastapi import FastAPI, HTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -37,6 +38,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class NoCacheStaticMiddleware(BaseHTTPMiddleware):
+    """
+    Запрещает браузеру (особенно мобильному Safari, который любит намертво
+    кэшировать JS-модули) отдавать статику из кэша без проверки актуальности.
+    Иначе после деплоя новых JS/CSS файлов пользователь может продолжать
+    видеть старую версию сайта, даже нажимая "обновить".
+    """
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache, must-revalidate"
+        return response
+
+
+app.add_middleware(NoCacheStaticMiddleware)
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
