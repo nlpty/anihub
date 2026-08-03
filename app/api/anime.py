@@ -2,8 +2,9 @@ from typing import Optional
 from fastapi import APIRouter, Query
 
 from app.services.manager import catalog_manager
+from app.http import UTF8JSONResponse
 
-router = APIRouter(prefix="/api/anime", tags=["Anime"])
+router = APIRouter(prefix="/api/anime", tags=["Anime"], default_response_class=UTF8JSONResponse)
 
 
 @router.get("/ongoings")
