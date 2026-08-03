@@ -5,6 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Аниме хаб</title>
 
+  <script>
+    // ВРЕМЕННАЯ ЛОВУШКА ОШИБОК — показывает текст JS-ошибки прямо на странице,
+    // чтобы можно было увидеть проблему без консоли разработчика (недоступна
+    // на iPhone без Mac). Ничего не меняет в логике сайта, только наблюдает.
+    (function () {
+      var pending = [];
+      function show(msg) {
+        pending.push(msg);
+        var el = document.getElementById('__debugErrorBox');
+        if (!el && document.body) {
+          el = document.createElement('div');
+          el.id = '__debugErrorBox';
+          el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;' +
+            'background:#b91c1c;color:#fff;font:12px/1.4 monospace;padding:10px;' +
+            'white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow:auto;';
+          document.body.prepend(el);
+        }
+        if (el) el.textContent = pending.join('\n\n---\n\n');
+      }
+      window.addEventListener('error', function (e) {
+        show('JS ERROR: ' + e.message + '\nfile: ' + e.filename + ':' + e.lineno + ':' + e.colno);
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        show('PROMISE REJECTED: ' + (e.reason && e.reason.stack ? e.reason.stack : e.reason));
+      });
+      document.addEventListener('DOMContentLoaded', function () {
+        if (pending.length) show(pending.pop()); // перерисовать после появления body
+      });
+    })();
+  </script>
+
   <link rel="stylesheet" href="/static/css/style.css">
   <style>
     /* Акцентный темно-синий цвет для списка «Необязательное» (#2563eb) */
