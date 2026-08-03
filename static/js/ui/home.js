@@ -1,9 +1,9 @@
 // ==========================================================================
 // ЛОГИКА ГЛАВНОЙ СТРАНИЦЫ И КАТАЛОГА ОНГОИНГОВ (Работа с REST API)
 // ==========================================================================
-import { userLists } from '../state.js';
-import { escapeHtml } from '../utils.js';
-import { mergeAnimeIntoDatabase } from '../db.js';
+import { userLists } from '../state.js?v=3';
+import { escapeHtml } from '../utils.js?v=3';
+import { mergeAnimeIntoDatabase } from '../db.js?v=3';
 
 let currentOngoingsPage = 1;
 let currentUpdatesPage = 1;

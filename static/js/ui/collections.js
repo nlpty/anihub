@@ -1,10 +1,10 @@
 // ==========================================================================
 // ЛОГИКА ВКЛАДКИ «КОЛЛЕКЦИИ» И ОТДЕЛЬНЫХ СПИСКОВ (COLLECTIONS)
 // ==========================================================================
-import { userLists, saveUserListsToStorage, setUserLists, lastWatched } from '../state.js';
-import { sortAlphabetically, showToast, escapeHtml } from '../utils.js';
-import { highlightNavButton, switchTab } from './navigation.js';
-import { renderAnimeCardHTML } from './home.js';
+import { userLists, saveUserListsToStorage, setUserLists, lastWatched } from '../state.js?v=3';
+import { sortAlphabetically, showToast, escapeHtml } from '../utils.js?v=3';
+import { highlightNavButton, switchTab } from './navigation.js?v=3';
+import { renderAnimeCardHTML } from './home.js?v=3';
 
 let currentListType = null;
 

@@ -1,10 +1,10 @@
 // ==========================================================================
 // ВКЛАДКА "ПОДБОРКА": счётчик тайтлов, случайное аниме, рекомендация
 // ==========================================================================
-import { getTitlesCount, getRandomAnime, getRecommendations, getAnimeDetails } from '../api.js';
-import { userLists } from '../state.js';
-import { renderAnimeCardHTML } from './home.js';
-import { mergeAnimeIntoDatabase } from '../db.js';
+import { getTitlesCount, getRandomAnime, getRecommendations, getAnimeDetails } from '../api.js?v=3';
+import { userLists } from '../state.js?v=3';
+import { renderAnimeCardHTML } from './home.js?v=3';
+import { mergeAnimeIntoDatabase } from '../db.js?v=3';
 
 function allSavedIds() {
   return [...new Set([

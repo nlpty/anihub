@@ -1,26 +1,26 @@
 // ==========================================================================
 // ЛОГИКА ДЕТАЛИЗАЦИИ КАРТОЧКИ АНИМЕ, СЧЕТЧИКОВ СЕРИЙ И ИНТЕГРАЦИИ ПЛЕЕРА
 // ==========================================================================
-import { getAnimeById } from '../db.js';
+import { getAnimeById } from '../db.js?v=3';
 import { 
   userLists, 
   saveUserListsToStorage, 
   watchedEpisodes, 
   saveWatchedEpisodesToStorage, 
   setLastWatched 
-} from '../state.js';
+} from '../state.js?v=3';
 import { 
   updateCollectionsCounters, 
   renderSingleListItems, 
   getCurrentListType, 
   updateLastWatchedUI 
-} from './collections.js';
-import { highlightNavButton } from './navigation.js';
-import { escapeHtml } from '../utils.js';
+} from './collections.js?v=3';
+import { highlightNavButton } from './navigation.js?v=3';
+import { escapeHtml } from '../utils.js?v=3';
 
 // Импорты плеера и API
-import { getAnimePlayers } from '../api.js';
-import { renderPlayer, destroyPlayer } from './player.js';
+import { getAnimePlayers } from '../api.js?v=3';
+import { renderPlayer, destroyPlayer } from './player.js?v=3';
 
 let currentAnimeId = null;
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22300%22%20height%3D%22450%22%3E%3Crect%20width%3D%22300%22%20height%3D%22450%22%20fill%3D%22%231a1d24%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20fill%3D%22%238b93a3%22%20font-family%3D%22sans-serif%22%20font-size%3D%2220%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3E%D0%9D%D0%B5%D1%82%20%D0%BF%D0%BE%D1%81%D1%82%D0%B5%D1%80%D0%B0%3C/text%3E%3C/svg%3E';
