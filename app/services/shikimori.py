@@ -64,6 +64,7 @@ def _to_unified(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "age_rating": RATING_MAP.get(raw_rating, "—"),
         "kind": item.get("kind") or "tv",
         "provider": "shikimori",
+        "updated_at": item.get("updated_at") or "",
     }
 
 

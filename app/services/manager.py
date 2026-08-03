@@ -144,6 +144,7 @@ class AnimeCatalogManager:
 
     def get_ongoings(self, limit: int = 200) -> List[Dict[str, Any]]:
         items = [a for a in self._catalog if a["status"] == "ongoing"]
+        items.sort(key=lambda a: a.get("updated_at") or "", reverse=True)
         return items[:limit]
 
     def get_catalog_page(
@@ -170,6 +171,33 @@ class AnimeCatalogManager:
 
     def get_by_id(self, anime_id: str) -> Optional[Dict[str, Any]]:
         return self._by_id.get(anime_id)
+
+    def get_random(self) -> Optional[Dict[str, Any]]:
+        if not self._catalog:
+            return None
+        import random
+        return random.choice(self._catalog)
+
+    def get_recommendations(
+        self, genres: List[str], exclude_ids: Optional[List[str]] = None, limit: int = 1
+    ) -> List[Dict[str, Any]]:
+        if not genres:
+            return []
+        genre_set = {g.strip().lower() for g in genres if g.strip()}
+        exclude_set = set(exclude_ids or [])
+        candidates = [
+            a for a in self._catalog
+            if a["id"] not in exclude_set
+            and any((g or "").lower() in genre_set for g in a.get("genres", []))
+        ]
+        if not candidates:
+            return []
+        candidates.sort(key=lambda a: float(a.get("rating") or 0), reverse=True)
+        import random
+        # немного случайности среди топ-15 лучших совпадений, чтобы рекомендация не была всегда одной и той же
+        pool = candidates[:15]
+        random.shuffle(pool)
+        return pool[:limit]
 
     async def get_by_id_live(self, anime_id: str) -> Optional[Dict[str, Any]]:
         cached = self.get_by_id(anime_id)
