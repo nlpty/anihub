@@ -27,7 +27,6 @@ import {
   handleSingleListSearch, 
   handleCollectionsSearch, 
   updateCollectionsCounters, 
-  updateTotalSiteTitlesCounter,
   exportUserDataJSON, 
   importUserDataJSON 
 } from './ui/collections.js';
@@ -40,6 +39,7 @@ import {
 } from './ui/navigation.js';
 
 import { copyToClipboard } from './utils.js';
+import { renderSelectionTab } from './ui/selection.js';
 
 // --- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ---
 window.switchTab = function(tabName, el) {
@@ -86,6 +86,10 @@ window.switchTab = function(tabName, el) {
   localStorage.setItem('activeTab', tabName);
   localStorage.setItem('viewingMode', 'tab');
   window.scrollTo({ top: 0, behavior: 'instant' });
+
+  if (tabName === 'selection') {
+    renderSelectionTab();
+  }
 };
 
 // --- ОЧИСТКА ПОИСКА ---
@@ -164,7 +168,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await renderHomeOngoings();
 
     if (typeof updateCollectionsCounters === 'function') updateCollectionsCounters();
-    if (typeof updateTotalSiteTitlesCounter === 'function') updateTotalSiteTitlesCounter();
 
     // 3. Если пользователь перезагрузил страницу внутри карточки аниме
     if (viewingMode === 'card' && savedAnimeId && typeof openAnimeDetails === 'function') {
